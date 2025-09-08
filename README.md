@@ -1,12 +1,19 @@
-# React + Vite
+# Quoridor Reporter
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+순도 AI 100% 바이브코딩 연습용으로 제작한 쿼리도 기보 프로그램입니다.
+보드게임의 대명사 쿼리도를 기보하고 연습하세요!
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 사용법
 
-## Expanding the ESLint configuration
+1. 말을 움직일 수 있습니다.
+2. 칸과 칸 사이의 인접한 간격을 누르면 벽이 만들어집니다.
+3. 위의 동그란 단추 또는 숫자키(1, 2)를 누르면 표기할 색상을 조절할 수 있습니다.
+4. 우클릭을 통해 말의 궤적을 만들 수 있습니다.
+5. ctrl+우클릭을 통해 숫자를 표기할 수 있습니다.
+6. ctrl을 누른 채 벽을 만들면 벽에 숫자가 표기됩니다.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 후일담
+제작기간: 4시간
+사용한 AI: cursor
+잘한점: cursor도 못잡은 버그를 내가 찾음!
