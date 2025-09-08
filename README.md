@@ -4,6 +4,8 @@
 
 보드게임의 대명사 쿼리도를 기보하고 연습하세요!
 
+<img width="508" height="502" alt="스크린샷 2025-09-08 153532" src="https://github.com/user-attachments/assets/51d2e82e-bbda-4bf1-b208-e25d6033a10d" />
+
 
 ## 사용법
 
