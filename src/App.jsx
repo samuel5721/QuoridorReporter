@@ -670,7 +670,6 @@ function App() {
 
   return (
     <AppContainer>
-      <Title>Quoridor 기보</Title>
       <ButtonContainer>
         <TurnButton 
           className={`white ${isWhite ? 'active' : ''}`}
