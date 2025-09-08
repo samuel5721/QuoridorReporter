@@ -239,6 +239,28 @@ function App() {
   const [selectedTool, setSelectedTool] = useState(null);
   // 히스토리 스택 (undo/redo): 각 변경 후 상태 스냅샷 저장
   const historyRef = useRef({ history: [], index: -1 });
+  
+  // 최신 상태를 추적하기 위한 ref
+  const stateRef = useRef({
+    walls,
+    ghostPieces,
+    cellNumbers,
+    whitePiece,
+    blackPiece,
+    isWhite,
+  });
+  
+  // 상태가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    stateRef.current = {
+      walls,
+      ghostPieces,
+      cellNumbers,
+      whitePiece,
+      blackPiece,
+      isWhite,
+    };
+  }, [walls, ghostPieces, cellNumbers, whitePiece, blackPiece, isWhite]);
 
   // 사운드 재생 함수들
   const playMovingSound = () => {
@@ -253,22 +275,57 @@ function App() {
     audio.play().catch(e => console.log('사운드 재생 실패:', e));
   };
 
-  const snapshot = () => ({
-    walls,
-    ghostPieces,
-    cellNumbers,
-    whitePiece,
-    blackPiece,
-    isWhite,
-  });
+  const snapshot = () => {
+    const snap = {
+      walls: stateRef.current.walls,
+      ghostPieces: stateRef.current.ghostPieces,
+      cellNumbers: stateRef.current.cellNumbers,
+      whitePiece: stateRef.current.whitePiece,
+      blackPiece: stateRef.current.blackPiece,
+      isWhite: stateRef.current.isWhite,
+    };
+    
+    console.log('📸 snapshot 생성됨:', {
+      walls: snap.walls.length,
+      ghostPieces: Object.keys(snap.ghostPieces).length,
+      cellNumbers: Object.keys(snap.cellNumbers).length,
+      whitePiece: snap.whitePiece,
+      blackPiece: snap.blackPiece,
+      isWhite: snap.isWhite
+    });
+    
+    return snap;
+  };
 
   const pushHistory = () => {
     const snap = snapshot();
     const next = historyRef.current.history.slice(0, historyRef.current.index + 1).concat([snap]);
     historyRef.current = { history: next, index: next.length - 1 };
+    
+    console.log('📝 pushHistory 호출됨');
+    console.log('  - 현재 index:', historyRef.current.index);
+    console.log('  - 히스토리 길이:', historyRef.current.history.length);
+    console.log('  - 새 스냅샷:', {
+      walls: snap.walls.length,
+      ghostPieces: Object.keys(snap.ghostPieces).length,
+      cellNumbers: Object.keys(snap.cellNumbers).length,
+      whitePiece: snap.whitePiece,
+      blackPiece: snap.blackPiece,
+      isWhite: snap.isWhite
+    });
   };
 
   const applySnapshot = (snap) => {
+    console.log('🔄 applySnapshot 호출됨');
+    console.log('  - 복원할 스냅샷:', {
+      walls: snap.walls.length,
+      ghostPieces: Object.keys(snap.ghostPieces).length,
+      cellNumbers: Object.keys(snap.cellNumbers).length,
+      whitePiece: snap.whitePiece,
+      blackPiece: snap.blackPiece,
+      isWhite: snap.isWhite
+    });
+    
     setWalls(snap.walls);
     setGhostPieces(snap.ghostPieces);
     setCellNumbers(snap.cellNumbers);
@@ -278,15 +335,33 @@ function App() {
   };
 
   const undo = useCallback(() => {
+    console.log('⏪ undo 호출됨');
+    console.log('  - 현재 index:', historyRef.current.index);
+    console.log('  - 히스토리 길이:', historyRef.current.history.length);
+    
     const idx = historyRef.current.index - 1;
-    if (idx < 0) return;
+    if (idx < 0) {
+      console.log('  - undo 불가: 이미 첫 번째 상태');
+      return;
+    }
+    
+    console.log('  - 이전 index로 이동:', idx);
     historyRef.current.index = idx;
     applySnapshot(historyRef.current.history[idx]);
   }, []);
 
   const redo = useCallback(() => {
+    console.log('⏩ redo 호출됨');
+    console.log('  - 현재 index:', historyRef.current.index);
+    console.log('  - 히스토리 길이:', historyRef.current.history.length);
+    
     const idx = historyRef.current.index + 1;
-    if (idx > historyRef.current.history.length - 1) return;
+    if (idx > historyRef.current.history.length - 1) {
+      console.log('  - redo 불가: 이미 마지막 상태');
+      return;
+    }
+    
+    console.log('  - 다음 index로 이동:', idx);
     historyRef.current.index = idx;
     applySnapshot(historyRef.current.history[idx]);
   }, []);
@@ -295,7 +370,18 @@ function App() {
   useEffect(() => {
     const init = [snapshot()];
     historyRef.current = { history: init, index: 0 };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    console.log('🚀 초기 히스토리 설정됨');
+    console.log('  - 초기 index:', historyRef.current.index);
+    console.log('  - 초기 히스토리 길이:', historyRef.current.history.length);
+    console.log('  - 초기 스냅샷:', {
+      walls: init[0].walls.length,
+      ghostPieces: Object.keys(init[0].ghostPieces).length,
+      cellNumbers: Object.keys(init[0].cellNumbers).length,
+      whitePiece: init[0].whitePiece,
+      blackPiece: init[0].blackPiece,
+      isWhite: init[0].isWhite
+    });
   }, []);
 
   // 키보드 단축키 처리
@@ -349,7 +435,10 @@ function App() {
       // 기존 벽이 있으면 제거
       setWalls(prev => {
         const updated = prev.filter(wall => wall.id !== existingWall.id);
-        setTimeout(pushHistory, 0);
+        setTimeout(() => {
+          console.log('🗑️ 벽 제거 액션 - pushHistory 호출');
+          pushHistory();
+        }, 0);
         return updated;
       });
       return;
@@ -386,7 +475,10 @@ function App() {
         setWalls(prev => {
           const updated = [...prev, newWall];
           // 기록
-          setTimeout(pushHistory, 0);
+          setTimeout(() => {
+            console.log('🧱 벽 설치 액션 - pushHistory 호출');
+            pushHistory();
+          }, 0);
           // 벽 설치 사운드 재생
           playWallSound();
           return updated;
@@ -464,13 +556,23 @@ function App() {
       if (isWhiteSelected) {
         setWhitePiece({ row, col });
         playMovingSound(); // 말 이동 사운드 재생
+        setSelectedPiece(null);
+        setTimeout(() => {
+          console.log('♟️ 말 이동 액션 (흰말) - pushHistory 호출');
+          pushHistory();
+        }, 0);
       } else if (isBlackSelected) {
         setBlackPiece({ row, col });
         playMovingSound(); // 말 이동 사운드 재생
+        setSelectedPiece(null);
+        setTimeout(() => {
+          console.log('♟️ 말 이동 액션 (검은말) - pushHistory 호출');
+          pushHistory();
+        }, 0);
+      } else {
+        // 선택된 말이 실제로 이동하지 않는 경우 (예: 같은 말을 다시 클릭)
+        setSelectedPiece(null);
       }
-      
-      setSelectedPiece(null);
-      setTimeout(pushHistory, 0);
     }
   };
 
@@ -489,11 +591,13 @@ function App() {
       const newNumbers = { ...cellNumbers };
       delete newGhosts[key];
       delete newNumbers[key];
-      setGhostPieces(() => {
-        setTimeout(pushHistory, 0);
-        return newGhosts;
-      });
+      setGhostPieces(() => newGhosts);
       setCellNumbers(() => newNumbers);
+      
+      setTimeout(() => {
+        console.log('👻 반투명 말/숫자 제거 액션 - pushHistory 호출');
+        pushHistory();
+      }, 0);
       return;
     }
 
@@ -505,18 +609,20 @@ function App() {
         .filter(n => n.color === color)
         .map(n => n.value);
       const next = existingValues.length ? Math.max(...existingValues) + 1 : 1;
-      setCellNumbers(prev => {
-        const updated = { ...prev, [key]: { color, value: next } };
-        setTimeout(pushHistory, 0);
-        return updated;
-      });
+      setCellNumbers(prev => ({ ...prev, [key]: { color, value: next } }));
+      
+      setTimeout(() => {
+        console.log('🔢 숫자 생성 액션 - pushHistory 호출');
+        pushHistory();
+      }, 0);
     } else {
       // 반투명 말 생성
-      setGhostPieces(prev => {
-        const updated = { ...prev, [key]: { color } };
-        setTimeout(pushHistory, 0);
-        return updated;
-      });
+      setGhostPieces(prev => ({ ...prev, [key]: { color } }));
+      
+      setTimeout(() => {
+        console.log('👻 반투명 말 생성 액션 - pushHistory 호출');
+        pushHistory();
+      }, 0);
     }
   };
 
