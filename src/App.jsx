@@ -1,6 +1,8 @@
 import styled from 'styled-components'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { PiCircleHalfTilt, PiNumberSquareOneBold, PiTrashBold } from 'react-icons/pi'
+import movingSound from './assets/MP_Moving.mp3'
+import wallSound from './assets/MP_Wall.mp3'
 
 // 게임판 크기 변수들
 const CELL_SIZE = 2.7; // rem
@@ -236,9 +238,20 @@ function App() {
   // 도구 선택: 'ghost' | 'number' | null
   const [selectedTool, setSelectedTool] = useState(null);
   // 히스토리 스택 (undo/redo): 각 변경 후 상태 스냅샷 저장
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const historyRef = useRef({ history: [], index: -1 });
+
+  // 사운드 재생 함수들
+  const playMovingSound = () => {
+    const audio = new Audio(movingSound);
+    audio.volume = 0.5; // 볼륨 조절
+    audio.play().catch(e => console.log('사운드 재생 실패:', e));
+  };
+
+  const playWallSound = () => {
+    const audio = new Audio(wallSound);
+    audio.volume = 0.5; // 볼륨 조절
+    audio.play().catch(e => console.log('사운드 재생 실패:', e));
+  };
 
   const snapshot = () => ({
     walls,
@@ -253,8 +266,6 @@ function App() {
     const snap = snapshot();
     const next = historyRef.current.history.slice(0, historyRef.current.index + 1).concat([snap]);
     historyRef.current = { history: next, index: next.length - 1 };
-    setHistory(next);
-    setHistoryIndex(next.length - 1);
   };
 
   const applySnapshot = (snap) => {
@@ -266,28 +277,24 @@ function App() {
     setIsWhite(snap.isWhite);
   };
 
-  const undo = () => {
+  const undo = useCallback(() => {
     const idx = historyRef.current.index - 1;
     if (idx < 0) return;
     historyRef.current.index = idx;
-    setHistoryIndex(idx);
     applySnapshot(historyRef.current.history[idx]);
-  };
+  }, []);
 
-  const redo = () => {
+  const redo = useCallback(() => {
     const idx = historyRef.current.index + 1;
     if (idx > historyRef.current.history.length - 1) return;
     historyRef.current.index = idx;
-    setHistoryIndex(idx);
     applySnapshot(historyRef.current.history[idx]);
-  };
+  }, []);
 
   // 초기 상태를 히스토리에 저장
   useEffect(() => {
     const init = [snapshot()];
     historyRef.current = { history: init, index: 0 };
-    setHistory(init);
-    setHistoryIndex(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -311,7 +318,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
+  }, [undo, redo]);
 
   // 턴 버튼 클릭 함수
   const handleTurnButtonClick = (turn) => {
@@ -380,6 +387,8 @@ function App() {
           const updated = [...prev, newWall];
           // 기록
           setTimeout(pushHistory, 0);
+          // 벽 설치 사운드 재생
+          playWallSound();
           return updated;
         });
       }
@@ -454,8 +463,10 @@ function App() {
       
       if (isWhiteSelected) {
         setWhitePiece({ row, col });
+        playMovingSound(); // 말 이동 사운드 재생
       } else if (isBlackSelected) {
         setBlackPiece({ row, col });
+        playMovingSound(); // 말 이동 사운드 재생
       }
       
       setSelectedPiece(null);
@@ -703,8 +714,7 @@ function App() {
             // 말 원위치
             setWhitePiece({ row: 8, col: 4 });
             setBlackPiece({ row: 0, col: 4 });
-            setHistory([]);
-            setHistoryIndex(-1);
+            historyRef.current = { history: [], index: -1 };
           }}
           style={{ background: '#b00020' }}
           title="초기화"
